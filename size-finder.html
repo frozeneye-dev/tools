@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>핏파인더 — 내 사이즈 도우미</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: #e0dbd3;
+  --text: #1a1814;
+  --text2: #6b6560;
+  --text3: #9e9890;
+  --accent: #2d5a3d;
+  --accent-light: #e8f2eb;
+  --accent-text: #1e3d29;
+  --warn: #8a4a00;
+  --warn-light: #fdf0e0;
+  --info: #1a3a5c;
+  --info-light: #e8f0f8;
+  --danger: #7a2020;
+  --danger-light: #fce8e8;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+}
+
+/* Header */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.logo {
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+.logo span { color: var(--text); }
+
+/* API Key Bar */
+.api-bar {
+  background: var(--warn-light);
+  border-bottom: 1px solid #e8c98a;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.api-bar.hidden { display: none; }
+.api-bar label { font-size: 13px; color: var(--warn); font-weight: 500; white-space: nowrap; }
+.api-bar input { flex: 1; min-width: 200px; font-family: 'DM Mono', monospace; font-size: 13px; padding: 6px 10px; border: 1px solid #d4a96a; border-radius: 6px; background: #fff; color: var(--text); }
+.api-bar button { padding: 6px 14px; background: var(--warn); color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.api-bar button:hover { opacity: 0.85; }
+.api-note { font-size: 12px; color: var(--warn); width: 100%; }
+
+/* Layout */
+.container { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+.tab {
+  flex: 1;
+  padding: 9px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  border-radius: 10px;
+  font-family: inherit;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+.tab:not(.active):hover { background: var(--surface2); }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.2px;
+}
+.card-title svg { color: var(--accent); }
+
+/* Form */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.field-group { display: flex; flex-direction: column; gap: 5px; }
+label { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: 0.2px; }
+input[type=text], input[type=number], input[type=password], select, textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+.unit { font-size: 11px; color: var(--text3); margin-left: 2px; font-weight: 400; }
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-text); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--surface2); }
+.btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #e8c0c0; }
+.btn-danger:hover { background: #f5d0d0; }
+.btn:active { transform: scale(0.98); }
+
+/* Saved items */
+.ref-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ref-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ref-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.ref-meta { font-size: 12px; color: var(--text2); line-height: 1.7; font-family: 'DM Mono', monospace; }
+.ref-note { font-size: 12px; color: var(--text3); margin-top: 3px; font-style: italic; }
+.delete-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: 4px; border-radius: 6px;
+  transition: all 0.15s; flex-shrink: 0;
+  font-size: 16px;
+}
+.delete-btn:hover { background: var(--danger-light); color: var(--danger); }
+
+/* Badge */
+.badge {
+  display: inline-block; font-size: 11px; padding: 2px 8px;
+  border-radius: 20px; font-weight: 500;
+}
+.badge-green { background: var(--accent-light); color: var(--accent-text); }
+.badge-blue { background: var(--info-light); color: var(--info); }
+.badge-warn { background: var(--warn-light); color: var(--warn); }
+
+/* Result */
+.result-box {
+  background: var(--accent-light);
+  border: 1px solid #b8d9c3;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-top: 16px;
+}
+.result-size {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent-text);
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+.result-body { font-size: 14px; color: var(--text); line-height: 1.8; }
+.result-body strong { color: var(--accent-text); font-weight: 700; }
+.result-body p { margin-bottom: 10px; }
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--text2);
+  font-size: 14px;
+}
+.spinner {
+  width: 28px; height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty state */
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text3);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* Profile summary chips */
+.profile-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text2);
+}
+.chip strong { color: var(--text); font-weight: 700; }
+
+/* Saved msg */
+.saved-msg {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--accent); margin-left: 12px;
+  opacity: 0; transition: opacity 0.2s;
+}
+.saved-msg.show { opacity: 1; }
+
+/* Help text */
+.help { font-size: 12px; color: var(--text3); line-height: 1.6; margin-bottom: 12px; }
+
+/* Mobile */
+@media (max-width: 500px) {
+  .field-grid { grid-template-columns: 1fr; }
+  .tab { font-size: 12px; padding: 8px 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">핏<span>파인더</span></div>
+  <div style="font-size:12px; color:var(--text3);">내 사이즈 AI 도우미</div>
+</div>
+
+<!-- API Key 입력바 -->
+<div class="api-bar" id="api-bar">
+  <label>🔑 Anthropic API 키</label>
+  <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+  <button onclick="saveApiKey()">저장</button>
+  <div class="api-note">키는 이 기기 브라우저에만 저장되며 외부로 전송되지 않아요. <a href="https://console.anthropic.com/keys" target="_blank" style="color:var(--warn);">API 키 발급 →</a></div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('profile')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      내 치수
+    </button>
+    <button class="tab" onclick="switchTab('saved')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      저장된 핏
+    </button>
+    <button class="tab" onclick="switchTab('analyze')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      사이즈 분석
+    </button>
+  </div>
+
+  <!-- 내 치수 탭 -->
+  <div id="tab-profile" class="section active">
+    <div class="card">
+      <div class="card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        내 신체 치수
+      </div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label>가슴둘레 <span class="unit">cm</span></label>
+          <input type="number" id="p-chest" placeholder="예: 96">
+        </div>
+        <div class="field-group">
+          <label>어깨너비 <span class="unit">cm</span></label>
+          <input type="number" id="p-shoulder" placeholder="예: 43">
+        </div>
+        <div class="field-group">
+          <label>허리둘레 <span class="unit">cm</span></label>
+          <input type="number" id="p-waist" placeholder="예: 80">
+        </div>
+        <div class="field-group">
+          <label>힙둘레 <span class="unit">cm</span></label>
+          <input type="number" id="p-hip" placeholder="예: 96">
+        </div>
+        <div class="field-group">
+          <label>허벅지둘레 <span class="unit">cm</span></label>
+          <input type="number" id="p-thigh" placeholder="예: 55">
+        </div>
+        <div class="field-group">
+          <label>키 <span class="unit">cm</span></label>
+          <input type="number" id="p-height" placeholder="예: 175">
+        </div>
+      </div>
+      <div style="display:flex; align-items:center;">
+        <button class="btn btn-primary" onclick="saveProfile()">저장하기</button>
+        <span class="saved-msg" id="profile-msg">✓ 저장됐어요</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+        기준 핏 옷 추가
+      </div>
+      <p class="help">입었을 때 가장 잘 맞았던 옷의 실측을 저장해두세요. 쇼핑몰 상세페이지 사이즈 표 수치를 입력하면 돼요.</p>
+      <div class="field-grid">
+        <div class="field-group">
+          <label>브랜드/이름</label>
+          <input type="text" id="ref-name" placeholder="예: 유니클로 옥스포드 M">
+        </div>
+        <div class="field-group">
+          <label>카테고리</label>
+          <select id="ref-cat">
+            <option value="상의">상의 (티셔츠/셔츠)</option>
+            <option value="아우터">아우터 (자켓/코트)</option>
+            <option value="하의">하의 (바지/스커트)</option>
+            <option value="원피스">원피스/세트</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>어깨너비 <span class="unit">cm</span></label>
+          <input type="number" id="ref-shoulder" placeholder="44">
+        </div>
+        <div class="field-group">
+          <label>가슴단면 <span class="unit">cm</span></label>
+          <input type="number" id="ref-chest" placeholder="52">
+        </div>
+        <div class="field-group">
+          <label>총장 <span class="unit">cm</span></label>
+          <input type="number" id="ref-length" placeholder="68">
+        </div>
+        <div class="field-group">
+          <label>소매길이 <span class="unit">cm</span></label>
+          <input type="number" id="ref-sleeve" placeholder="62">
+        </div>
+      </div>
+      <div class="field-group" style="margin-bottom:14px;">
+        <label>핏 느낌 메모</label>
+        <textarea id="ref-note" placeholder="예: 어깨가 딱 맞고 가슴은 약간 여유. 허리선이 예쁘게 떨어짐."></textarea>
+      </div>
+      <div style="display:flex; align-items:center;">
+        <button class="btn btn-primary" onclick="saveRef()">핏 저장하기</button>
+        <span class="saved-msg" id="ref-msg">✓ 저장됐어요</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 저장된 핏 탭 -->
+  <div id="tab-saved" class="section">
+    <div class="card">
+      <div class="card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        내 기준 핏 목록
+      </div>
+      <div id="ref-list"></div>
+    </div>
+  </div>
+
+  <!-- 사이즈 분석 탭 -->
+  <div id="tab-analyze" class="section">
+    <div class="card">
+      <div class="card-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        AI 사이즈 분석
+      </div>
+      <p class="help">쇼핑몰 상품페이지의 사이즈 표를 복사해서 붙여넣으세요. 실측 수치가 있는 표가 가장 정확해요 (무신사, 29CM, 에이블리 등).</p>
+      <div class="field-group" style="margin-bottom:12px;">
+        <label>사이즈 표 or 상품 정보 붙여넣기</label>
+        <textarea id="product-input" style="min-height:110px;" placeholder="예시:
+S  어깨43  가슴단면50  총장67  소매61
+M  어깨45  가슴단면52  총장68  소매62
+L  어깨47  가슴단면54  총장69  소매63
+
+또는 URL 포함한 상품 설명 전체를 붙여넣어도 됩니다."></textarea>
+      </div>
+      <div class="field-group" style="margin-bottom:14px;">
+        <label>카테고리</label>
+        <select id="analyze-cat">
+          <option value="상의">상의 (티셔츠/셔츠)</option>
+          <option value="아우터">아우터 (자켓/코트)</option>
+          <option value="하의">하의 (바지/스커트)</option>
+          <option value="원피스">원피스/세트</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="analyze-btn" onclick="runAnalysis()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        분석하기
+      </button>
+    </div>
+
+    <div id="result-area" style="display:none;">
+      <div id="result-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// 데이터
+let profile = JSON.parse(localStorage.getItem('fitfinder_profile') || '{}');
+let refs = JSON.parse(localStorage.getItem('fitfinder_refs') || '[]');
+let apiKey = localStorage.getItem('fitfinder_apikey') || '';
+
+// API 키 바 상태
+function updateApiBar() {
+  if (apiKey) {
+    document.getElementById('api-bar').classList.add('hidden');
+  } else {
+    document.getElementById('api-bar').classList.remove('hidden');
+  }
+}
+updateApiBar();
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-')) { alert('올바른 API 키 형식이 아니에요 (sk-ant-... 로 시작해야 해요)'); return; }
+  apiKey = val;
+  localStorage.setItem('fitfinder_apikey', val);
+  updateApiBar();
+}
+
+// 탭
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['profile','saved','analyze'][i] === t);
+  });
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+  if (t === 'saved') renderRefs();
+}
+
+// 프로필 저장
+function saveProfile() {
+  profile = {
+    chest: document.getElementById('p-chest').value,
+    shoulder: document.getElementById('p-shoulder').value,
+    waist: document.getElementById('p-waist').value,
+    hip: document.getElementById('p-hip').value,
+    thigh: document.getElementById('p-thigh').value,
+    height: document.getElementById('p-height').value,
+  };
+  localStorage.setItem('fitfinder_profile', JSON.stringify(profile));
+  showMsg('profile-msg');
+}
+
+// 기준 핏 저장
+function saveRef() {
+  const name = document.getElementById('ref-name').value.trim();
+  if (!name) { alert('브랜드/이름을 입력해주세요'); return; }
+  refs.push({
+    id: Date.now(),
+    name,
+    cat: document.getElementById('ref-cat').value,
+    shoulder: document.getElementById('ref-shoulder').value,
+    chest: document.getElementById('ref-chest').value,
+    length: document.getElementById('ref-length').value,
+    sleeve: document.getElementById('ref-sleeve').value,
+    note: document.getElementById('ref-note').value,
+  });
+  localStorage.setItem('fitfinder_refs', JSON.stringify(refs));
+  ['ref-name','ref-shoulder','ref-chest','ref-length','ref-sleeve','ref-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  showMsg('ref-msg');
+}
+
+function deleteRef(id) {
+  if (!confirm('삭제할까요?')) return;
+  refs = refs.filter(r => r.id !== id);
+  localStorage.setItem('fitfinder_refs', JSON.stringify(refs));
+  renderRefs();
+}
+
+function renderRefs() {
+  const el = document.getElementById('ref-list');
+  if (!refs.length) {
+    el.innerHTML = '<div class="empty">아직 저장된 기준 핏이 없어요.<br>내 치수 탭에서 잘 맞았던 옷을 추가해보세요.</div>';
+    return;
+  }
+  el.innerHTML = refs.map(r => `
+    <div class="ref-item">
+      <div style="flex:1;">
+        <div class="ref-name">${r.name} <span class="badge badge-green">${r.cat}</span></div>
+        <div class="ref-meta">
+          ${r.shoulder ? '어깨 ' + r.shoulder + 'cm' : ''}
+          ${r.chest ? '  가슴단면 ' + r.chest + 'cm' : ''}
+          ${r.length ? '  총장 ' + r.length + 'cm' : ''}
+          ${r.sleeve ? '  소매 ' + r.sleeve + 'cm' : ''}
+        </div>
+        ${r.note ? `<div class="ref-note">"${r.note}"</div>` : ''}
+      </div>
+      <button class="delete-btn" onclick="deleteRef(${r.id})" title="삭제">✕</button>
+    </div>
+  `).join('');
+}
+
+// 분석
+async function runAnalysis() {
+  if (!apiKey) {
+    alert('먼저 상단에 Anthropic API 키를 입력해주세요.\nconsole.anthropic.com/keys 에서 무료로 발급받을 수 있어요.');
+    return;
+  }
+  const productText = document.getElementById('product-input').value.trim();
+  const cat = document.getElementById('analyze-cat').value;
+  if (!productText) { alert('상품 사이즈 표를 붙여넣어주세요'); return; }
+
+  const profileStr = Object.keys(profile).some(k => profile[k])
+    ? `신체 치수: 키 ${profile.height||'?'}cm, 가슴둘레 ${profile.chest||'?'}cm, 어깨너비 ${profile.shoulder||'?'}cm, 허리둘레 ${profile.waist||'?'}cm, 힙둘레 ${profile.hip||'?'}cm, 허벅지둘레 ${profile.thigh||'?'}cm`
+    : '신체 치수: 미입력 (내 치수 탭에서 입력하면 더 정확해요)';
+
+  const refsStr = refs.length
+    ? '기준 핏 목록 (잘 맞았던 옷들):\n' + refs.filter(r => r.cat === cat || true).map(r =>
+        `- ${r.name}(${r.cat}): 어깨${r.shoulder||'?'}cm, 가슴단면${r.chest||'?'}cm, 총장${r.length||'?'}cm, 소매${r.sleeve||'?'}cm / 핏메모: ${r.note||'없음'}`
+      ).join('\n')
+    : '기준 핏: 미입력 (저장된 핏 기준 없이 신체 치수만으로 분석)';
+
+  const prompt = `당신은 한국 온라인 쇼핑 의류 사이즈 전문 추천 AI입니다.
+사용자의 신체 치수와 기준 핏 데이터를 분석해서 이 상품의 어떤 사이즈를 구매할지 명확하게 추천해주세요.
+
+[사용자 신체 정보]
+${profileStr}
+
+[기준 핏 (잘 맞았던 옷 실측)]
+${refsStr}
+
+[구매하려는 상품 카테고리]
+${cat}
+
+[상품 사이즈 표 / 상품 정보]
+${productText}
+
+아래 형식으로 답변해주세요. 마크다운 형식으로:
+
+## 추천 사이즈: [사이즈명]
+
+[이 사이즈를 추천하는 이유를 구체적인 수치를 들어 2-3문장으로 설명]
+
+**주의할 점:** [치수나 핏 관련 주의사항]
+
+**한 사이즈 차이 고려 시:** [어떤 경우에 위/아래 사이즈를 선택하면 좋은지]
+
+사이즈 표가 불완전하면 어떤 정보가 더 필요한지 안내해주세요.`;
+
+  const resultArea = document.getElementById('result-area');
+  const resultContent = document.getElementById('result-content');
+  resultArea.style.display = 'block';
+  resultContent.innerHTML = `
+    <div class="card">
+      <div class="loading">
+        <div class="spinner"></div>
+        AI가 사이즈를 분석하고 있어요...
+      </div>
+    </div>`;
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `API 오류 (${res.status})`);
+    }
+
+    const data = await res.json();
+    const text = data.content?.map(c => c.text || '').join('') || '분석 결과 없음';
+
+    // 마크다운 → HTML 변환
+    let html = text
+      .replace(/## (.+)/g, '<h3 style="font-size:18px; font-weight:700; color:var(--accent-text); margin-bottom:10px; letter-spacing:-0.5px;">$1</h3>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n\n/g, '</p><p style="margin-bottom:10px;">')
+      .replace(/\n/g, '<br>');
+
+    resultContent.innerHTML = `
+      <div class="result-box">
+        <div class="result-body"><p>${html}</p></div>
+      </div>`;
+  } catch(e) {
+    resultContent.innerHTML = `
+      <div class="card" style="border-color:#e8c0c0;">
+        <p style="color:var(--danger); font-size:14px;">❌ 오류: ${e.message}</p>
+        <p style="font-size:12px; color:var(--text2); margin-top:8px;">API 키를 확인하거나 잠시 후 다시 시도해주세요.</p>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showMsg(id) {
+  const el = document.getElementById(id);
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// 저장된 프로필 불러오기
+window.onload = () => {
+  if (profile.chest) document.getElementById('p-chest').value = profile.chest;
+  if (profile.shoulder) document.getElementById('p-shoulder').value = profile.shoulder;
+  if (profile.waist) document.getElementById('p-waist').value = profile.waist;
+  if (profile.hip) document.getElementById('p-hip').value = profile.hip;
+  if (profile.thigh) document.getElementById('p-thigh').value = profile.thigh;
+  if (profile.height) document.getElementById('p-height').value = profile.height;
+};
+</script>
+</body>
+</html>
