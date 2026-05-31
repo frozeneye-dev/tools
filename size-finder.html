@@ -273,6 +273,22 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
 /* Help text */
 .help { font-size: 12px; color: var(--text3); line-height: 1.6; margin-bottom: 12px; }
 
+/* Image drop zone */
+#img-drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--surface2);
+  margin-bottom: 4px;
+}
+#img-drop-zone:hover, #img-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
 /* Mobile */
 @media (max-width: 500px) {
   .field-grid { grid-template-columns: 1fr; }
@@ -417,17 +433,23 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
         AI 사이즈 분석
       </div>
-      <p class="help">쇼핑몰 상품페이지의 사이즈 표를 복사해서 붙여넣으세요. 실측 수치가 있는 표가 가장 정확해요 (무신사, 29CM, 에이블리 등).</p>
-      <div class="field-group" style="margin-bottom:12px;">
-        <label>사이즈 표 or 상품 정보 붙여넣기</label>
-        <textarea id="product-input" style="min-height:110px;" placeholder="예시:
-S  어깨43  가슴단면50  총장67  소매61
-M  어깨45  가슴단면52  총장68  소매62
-L  어깨47  가슴단면54  총장69  소매63
+      <p class="help">쇼핑몰 사이즈 표 부분을 스크린샷 찍어서 올려주세요. AI가 자동으로 읽어서 분석해드려요.</p>
 
-또는 URL 포함한 상품 설명 전체를 붙여넣어도 됩니다."></textarea>
+      <div id="img-drop-zone" onclick="document.getElementById('img-input').click()" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+        <input type="file" id="img-input" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
+        <div id="img-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3); margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div style="font-size:14px; color:var(--text2); margin-bottom:4px;">클릭하거나 이미지를 드래그해서 올려주세요</div>
+          <div style="font-size:12px; color:var(--text3);">쇼핑몰 사이즈 표 스크린샷</div>
+        </div>
+        <img id="img-preview" style="display:none; max-width:100%; max-height:200px; border-radius:8px; object-fit:contain;">
       </div>
-      <div class="field-group" style="margin-bottom:14px;">
+      <button id="img-clear-btn" onclick="clearImage()" style="display:none; margin-top:8px;" class="btn btn-outline">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        이미지 삭제
+      </button>
+
+      <div class="field-group" style="margin-top:14px; margin-bottom:14px;">
         <label>카테고리</label>
         <select id="analyze-cat">
           <option value="반팔">상의 - 반팔 (티셔츠)</option>
@@ -548,52 +570,91 @@ function renderRefs() {
   `).join('');
 }
 
+// 이미지 처리
+let imageBase64 = null;
+let imageMime = null;
+
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (file) loadImage(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('img-drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImage(file);
+}
+
+function loadImage(file) {
+  imageMime = file.type;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    imageBase64 = e.target.result.split(',')[1];
+    document.getElementById('img-placeholder').style.display = 'none';
+    const preview = document.getElementById('img-preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('img-clear-btn').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage() {
+  imageBase64 = null;
+  imageMime = null;
+  document.getElementById('img-input').value = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-clear-btn').style.display = 'none';
+}
+
 // 분석
 async function runAnalysis() {
   if (!apiKey) {
     alert('먼저 상단에 Anthropic API 키를 입력해주세요.\nconsole.anthropic.com/keys 에서 무료로 발급받을 수 있어요.');
     return;
   }
-  const productText = document.getElementById('product-input').value.trim();
+  if (!imageBase64) { alert('사이즈 표 스크린샷을 올려주세요'); return; }
+
   const cat = document.getElementById('analyze-cat').value;
-  if (!productText) { alert('상품 사이즈 표를 붙여넣어주세요'); return; }
 
   const profileStr = Object.keys(profile).some(k => profile[k])
     ? `신체 치수: 키 ${profile.height||'?'}cm, 가슴둘레 ${profile.chest||'?'}cm, 어깨너비 ${profile.shoulder||'?'}cm, 허리둘레 ${profile.waist||'?'}cm, 힙둘레 ${profile.hip||'?'}cm, 허벅지둘레 ${profile.thigh||'?'}cm`
-    : '신체 치수: 미입력 (내 치수 탭에서 입력하면 더 정확해요)';
+    : '신체 치수: 미입력';
 
   const refsStr = refs.length
-    ? '기준 핏 목록 (잘 맞았던 옷들):\n' + refs.filter(r => r.cat === cat || true).map(r =>
-        `- ${r.name}(${r.cat}): 어깨${r.shoulder||'?'}cm, 가슴단면${r.chest||'?'}cm, 총장${r.length||'?'}cm, 소매${r.sleeve||'?'}cm / 핏메모: ${r.note||'없음'}`
+    ? '기준 핏 목록 (잘 맞았던 옷들):\n' + refs.map(r =>
+        `- ${r.name}(${r.cat}): 어깨${r.shoulder||'?'}cm, 가슴단면${r.chest||'?'}cm (둘레로 환산시 ${r.chest ? r.chest*2+'cm' : '?'}), 총장${r.length||'?'}cm, 소매${r.sleeve||'?'}cm / 핏메모: ${r.note||'없음'}`
       ).join('\n')
-    : '기준 핏: 미입력 (저장된 핏 기준 없이 신체 치수만으로 분석)';
+    : '기준 핏: 미입력';
 
-  const prompt = `당신은 한국 온라인 쇼핑 의류 사이즈 전문 추천 AI입니다.
-사용자의 신체 치수와 기준 핏 데이터를 분석해서 이 상품의 어떤 사이즈를 구매할지 명확하게 추천해주세요.
+  const promptText = `당신은 한국 온라인 쇼핑 의류 사이즈 전문 추천 AI입니다.
+첨부된 이미지는 쇼핑몰 상품의 사이즈 표 스크린샷입니다. 표에서 수치를 읽고 사용자에게 맞는 사이즈를 추천해주세요.
+
+중요: 가슴단면 × 2 = 가슴둘레로 환산해서 비교하세요.
 
 [사용자 신체 정보]
 ${profileStr}
 
-[기준 핏 (잘 맞았던 옷 실측)]
+[기준 핏 (잘 맞았던 옷들)]
 ${refsStr}
 
-[구매하려는 상품 카테고리]
+[카테고리]
 ${cat}
 
-[상품 사이즈 표 / 상품 정보]
-${productText}
-
-아래 형식으로 답변해주세요. 마크다운 형식으로:
+아래 형식으로 답변해주세요:
 
 ## 추천 사이즈: [사이즈명]
 
-[이 사이즈를 추천하는 이유를 구체적인 수치를 들어 2-3문장으로 설명]
+[추천 이유를 구체적 수치를 들어 2-3문장으로]
 
-**주의할 점:** [치수나 핏 관련 주의사항]
+**주의할 점:** [핏/치수 관련 주의사항]
 
-**한 사이즈 차이 고려 시:** [어떤 경우에 위/아래 사이즈를 선택하면 좋은지]
+**한 사이즈 차이 고려 시:** [위/아래 사이즈를 선택할 상황]
 
-사이즈 표가 불완전하면 어떤 정보가 더 필요한지 안내해주세요.`;
+이미지에서 사이즈 표를 읽을 수 없으면 안내해주세요.`;
 
   const resultArea = document.getElementById('result-area');
   const resultContent = document.getElementById('result-content');
@@ -602,7 +663,7 @@ ${productText}
     <div class="card">
       <div class="loading">
         <div class="spinner"></div>
-        AI가 사이즈를 분석하고 있어요...
+        사이즈 표를 읽고 분석하고 있어요...
       </div>
     </div>`;
 
@@ -621,7 +682,13 @@ ${productText}
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+            { type: 'text', text: promptText }
+          ]
+        }]
       })
     });
 
