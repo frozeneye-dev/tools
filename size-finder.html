@@ -439,8 +439,8 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
         <input type="file" id="img-input" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
         <div id="img-placeholder">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3); margin-bottom:8px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <div style="font-size:14px; color:var(--text2); margin-bottom:4px;">클릭하거나 이미지를 드래그해서 올려주세요</div>
-          <div style="font-size:12px; color:var(--text3);">쇼핑몰 사이즈 표 스크린샷</div>
+          <div style="font-size:14px; color:var(--text2); margin-bottom:4px;">클릭하거나 드래그해서 올려주세요</div>
+          <div style="font-size:12px; color:var(--text3);">또는 스크린샷 후 <kbd style="background:var(--border); border-radius:4px; padding:1px 5px; font-size:11px;">Ctrl+V</kbd> 붙여넣기</div>
         </div>
         <img id="img-preview" style="display:none; max-width:100%; max-height:200px; border-radius:8px; object-fit:contain;">
       </div>
@@ -585,6 +585,19 @@ function handleDrop(e) {
   const file = e.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) loadImage(file);
 }
+
+// 클립보드 붙여넣기 (Ctrl+V)
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) loadImage(file);
+      break;
+    }
+  }
+});
 
 function loadImage(file) {
   imageMime = file.type;
